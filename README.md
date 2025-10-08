@@ -9,7 +9,7 @@
 - Lightweight and simple
 - Serves audio files over HTTP/WebDAV
 - Easy to configure and run
-- No dependencies beyond standard POSIX tools
+- No dependencies
 
 ---
 
