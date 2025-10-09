@@ -2,9 +2,11 @@
 AudioServ
 A: Stéphane MEYER (Teegre)
 C: 2025-09-25
-M: 2025-10-08
+M: 2025-10-09
 */
 
+#include <errno.h>
+#include <fcntl.h>
 #include <linux/limits.h>
 #include <pthread.h>
 #include <signal.h>
@@ -18,12 +20,33 @@ M: 2025-10-08
 
 char g_local_ip[64];
 char g_location_url[256];
+const char *lockfile = "/tmp/audioserv.lock";
+int lockfd;
 
 static void handle_signal(int sig) {
     (void)sig;
     printf("\n");
     printf("x received interruption signal.\n");
     g_running = 0;
+}
+
+int lock_instance(void) {
+    int fd = open(lockfile, O_CREAT | O_RDWR, 0666);
+    if (fd < 0) {
+        perror("x lock");
+        return -1;
+    }
+    if (lockf(fd, F_TLOCK, 0) < 0) {
+        if (errno == EACCES || errno == EAGAIN) {
+            fprintf(stderr, "x an instance of audioserv is already running.\n");
+            close(fd);
+            return -1;
+        }
+        perror("x lock");
+        close(fd);
+        return -1;
+    }
+    return fd;
 }
 
 int main() {
@@ -35,6 +58,9 @@ int main() {
     lowercase(OS_VERSION);
 
     printf("o audioserv version %s %s\n", AUDIOSERV_VERSION, OS_VERSION);
+
+    int lockfd = lock_instance();
+    if (lockfd == -1) return 1;
 
     init_music_dir();
 
@@ -53,6 +79,9 @@ int main() {
     }
 
     pthread_join(http_tid, NULL);
+
+    unlink(lockfile);
+    close(lockfd);
 
     printf("o bye!\n");
     return 0;

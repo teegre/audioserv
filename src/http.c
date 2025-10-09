@@ -2,7 +2,7 @@
 Minimal HTTP file server
 A: Stéphane MEYER (Teegre)
 C: 2025-09-25
-M: 2025-10-08
+M: 2025-10-09
 */
 
 #include <dirent.h>
@@ -228,7 +228,6 @@ void handle_propfind_request(int conn, char *dirpath, const char *urlpath, int d
             urlpath, basename(dirpath),
             (long long)st.st_size, mime, timebuf);
         send(conn, buf, strlen(buf), 0);
-        // printf("Sent that: %s\n", buf);
         return;
     }
 
@@ -239,13 +238,11 @@ void handle_propfind_request(int conn, char *dirpath, const char *urlpath, int d
           "Content-Type: text/plain\r\n\r\n"
           "PROPFIND Not found\n";
         send(conn, resp, strlen(resp), 0);
-        // printf("Sent that: %s", resp);
         return;
     }
 
     char buffer[8192];
     send(conn, DRESPONSE_HEADER, strlen(DRESPONSE_HEADER), 0);
-    // printf("Sent that: %s\n", buffer);
 
     char href[1024];
     url_encode(urlpath, href, sizeof(href));
@@ -293,7 +290,6 @@ void handle_propfind_request(int conn, char *dirpath, const char *urlpath, int d
                     "HTTP/1.1 503 Service Unavailable\r\n"
                     "Content-Length: 0\r\n\r\n";
                 send(conn, resp, strlen(resp), 0);
-                // printf("Sent that: %s", resp);
                 closedir(dir);
                 return;
             }
@@ -393,9 +389,7 @@ void handle_http_request(int conn) {
             "Content-Type: text/plain\r\n"
             "Content-Length: 14\r\n\r\n"
             "Access denied\n";
-        // printf("Received this: %s", buf);
         send(conn, resp, strlen(resp), 0);
-        // printf("Sent that: %s", resp);
         return;
     }
 
@@ -439,8 +433,9 @@ void handle_http_request(int conn) {
                 "DAV: 1,2\r\n"
                 "Allow: OPTIONS, GET, HEAD, PROPFIND\r\n\r\n",
                 mime, st.st_size);
+
+            printf("h file %s\n", path);
             send(conn, header, strlen(header), 0);
-            printf("h path = %s\n", path);
         }
         else if (S_ISDIR(st.st_mode)) {
             char header[1024];
@@ -451,6 +446,8 @@ void handle_http_request(int conn) {
                 "Content-Location: %s\r\n"
                 "DAV: 1,2\r\n"
                 "Allow: OPTIONS, GET, HEAD, PROPFIND\r\n\r\n", path);
+
+            printf("→ %s\n", path);
             send(conn, header, strlen(header), 0);
         }
         else {
@@ -458,9 +455,7 @@ void handle_http_request(int conn) {
                 "HTTP/1.1 403 Forbidden\r\n"
                 "Content-Type: text/plain\r\n\r\n"
                 "Unsupported file type\n";
-            // printf("Received this: %s", buf);
             send(conn, resp, strlen(resp), 0);
-            // printf("Sent that; %s", resp);
         }
     }
     else if (strcmp(method, "PROPFIND") == 0) {
@@ -471,11 +466,10 @@ void handle_http_request(int conn) {
             if (depth < 0) depth = 0;
             if (depth > 1) depth = 1;
         }
-        // printf("Received this: %s", buf);
+        printf("p %s\n", path);
         handle_propfind_request(conn, filepath, path, depth);
     }
     else if (strcmp(method, "OPTIONS") == 0) {
-        // printf("Received this: %s\n", buf);
         const char *resp =
             "HTTP/1.1 200 OK\r\n"
             "DAV: 1,2\r\n"
@@ -555,14 +549,14 @@ void *http_worker(void *arg) {
       int ret = select(listen_fd + 1, &fds, NULL, NULL, &tv);
       if (ret > 0 && FD_ISSET(listen_fd, &fds)) {
           if (!g_running) break;
-          // struct sockaddr_in peer = {0};
-          // socklen_t peer_len = sizeof(peer);
-          // int conn = accept(listen_fd, (struct sockaddr*)&peer, &peer_len);
-          int conn = accept(listen_fd, NULL, NULL);
+          struct sockaddr_in peer = {0};
+          socklen_t peer_len = sizeof(peer);
+          int conn = accept(listen_fd, (struct sockaddr*)&peer, &peer_len);
+          // int conn = accept(listen_fd, NULL, NULL);
           if (conn >= 0) {
-              // char ipstr[INET_ADDRSTRLEN];
-              // inet_ntop(AF_INET, &peer.sin_addr, ipstr, INET_ADDRSTRLEN);
-              // printf("<%s>\n", ipstr);
+              char ipstr[INET_ADDRSTRLEN];
+              inet_ntop(AF_INET, &peer.sin_addr, ipstr, INET_ADDRSTRLEN);
+              printf("<%s> ", ipstr);
               queue_push(conn);
           }
           else if (errno != EINTR) {
