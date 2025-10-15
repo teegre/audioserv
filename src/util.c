@@ -173,6 +173,10 @@ void html_escape(const char *src, char *dst, size_t size) {
             strncat(dst, "&nbsp;", size - 1);
             size -= 6;
         }
+        else if (*src == '"') {
+            strncat(dst, "&quot;", size - 1);
+            size -= 6;
+        }
         else {
             strncat(dst, (char[]){*src, 0}, size-1);
             size--;

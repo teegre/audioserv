@@ -6,6 +6,27 @@
 
 #define HTTP_PORT 8200
 
+#define HTTP_HEADER \
+    "<!doctype html>" \
+    "<html xmlns=\"http://www.w3.org/1999/xhtml\" lang=\"en\" xml:lang=\"en\">" \
+      "<head>" \
+        "<meta charset=\"utf-8\"/>" \
+        "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, user-scalable=yes\"/>" \
+        "<title>AudioServ</title>" \
+        "<style>" \
+          "html {" \
+            "background: #0D0D0D;" \
+            "color: #292A2D;" \
+          "}" \
+          "a {" \
+            "color: #8ab4f8;" \
+          "}" \
+        "</style>" \
+      "</head>" \
+      "<h1>Index of "
+
+#define HTTP_FOOTER "</ul></body></html>"
+
 #define DRESPONSE_HEADER \
     "HTTP/1.1 207 Multi-Status\r\n" \
     "Content-Type: application/xml; charset\"utf-8\"\r\n\r\n" \

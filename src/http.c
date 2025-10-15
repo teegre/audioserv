@@ -107,7 +107,7 @@ void send_file(int conn, const char *filepath, const char *filename, const char*
                 "Content-Length: 19\r\n\r\n"
                 "Server shutting down\n";
             send(conn, resp, strlen(resp), MSG_NOSIGNAL);
-            printf("x 503 service unavailable\n");
+            printf("x 503 server shutting down\n");
             fclose(f);
             return;
         }
@@ -161,8 +161,7 @@ void send_directory_listing(int conn, const char *dirpath, const char *urlpath) 
       "Content-Type: text/html; charset=utf-8\r\n\r\n";
     send(conn, header, strlen(header), 0);
 
-    const char *html_head = "<html><body><h1>Index of ";
-    send(conn, html_head, strlen(html_head), 0);
+    send(conn, HTTP_HEADER, strlen(HTTP_HEADER), 0);
     send(conn, urlpath, strlen(urlpath), 0);
     const char *html_mid = "</h1><ul>";
     send(conn, html_mid, strlen(html_mid), 0);
@@ -204,8 +203,7 @@ void send_directory_listing(int conn, const char *dirpath, const char *urlpath) 
         free(entries[i]);
     }
 
-    const char *html_end = "</ul></body></html>";
-    send(conn, html_end, strlen(html_end), 0);
+    send(conn, HTTP_FOOTER, strlen(HTTP_FOOTER), 0);
 }
 
 void handle_propfind_request(int conn, char *dirpath, const char *urlpath, int depth) {
@@ -475,6 +473,7 @@ void handle_http_request(int conn) {
             "DAV: 1,2\r\n"
             "Allow: OPTIONS, GET, HEAD, PROPFIND\r\n"
             "Content-Length: 0\r\n\r\n";
+        printf("o %s\n", path);
         send(conn, resp, strlen(resp), 0);
     }
     else {
@@ -484,6 +483,7 @@ void handle_http_request(int conn) {
             "Content-Type: text/plain\r\n"
             "Content-Length: 18\r\n\r\n"
             "Method not allowed\n";
+        printf("x %s\n", method);
         send(conn, resp, strlen(resp), 0);
     }
     close(conn);
